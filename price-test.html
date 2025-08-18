@@ -1,33 +1,325 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa">
 <head>
-  <meta charset="UTF-8">
-  <title>Crypto Price Test</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>📊 Crypto Dashboard – Top 20</title>
+  <style>
+    body{font-family:tahoma,Arial,sans-serif;direction:rtl;background:#f5f7fb;margin:0}
+    header{background:#1e88e5;color:#fff;padding:14px 10px;text-align:center}
+    .wrap{max-width:1500px;margin:16px auto;padding:0 12px}
+    .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+    input,select,button{padding:8px 10px;border:1px solid #cfd8dc;border-radius:8px;font-family:inherit}
+    button{background:#1e88e5;color:#fff;cursor:pointer}
+    button:disabled{background:#90caf9;cursor:not-allowed}
+    .note{font-size:12px;color:#546e7a;margin-top:6px}
+    .table-wrap{overflow:auto;background:#fff;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+    table{border-collapse:collapse;width:100%}
+    th,td{border-bottom:1px solid #eee;padding:8px 10px;text-align:center;white-space:nowrap;font-size:13px}
+    th{background:#e3f2fd;color:#0d47a1;position:sticky;top:0;z-index:1}
+    tr:hover{background:#fafcff}
+    .positive{color:#2e7d32;font-weight:600}
+    .negative{color:#c62828;font-weight:600}
+    .badge{padding:2px 6px;border-radius:8px;font-weight:600}
+    .good{background:#e8f5e9;color:#2e7d32}
+    .bad{background:#ffebee;color:#c62828}
+    .neutral{background:#eceff1;color:#37474f}
+    .muted{color:#607d8b}
+    .nowrap{white-space:nowrap}
+  </style>
 </head>
 <body>
-  <h1>قیمت لحظه‌ای</h1>
-  <div id="btc">BTCUSDT: ...</div>
-  <div id="eth">ETHUSDT: ...</div>
+  <header>
+    <h2>📊 Crypto Dashboard – Top 20</h2>
+    <div style="font-size:12px;opacity:.9">منبع داده: Binance (OHLCV) از طریق Codetabs Proxy | اندیکاتورها در مرورگر محاسبه می‌شوند</div>
+  </header>
 
-  <script>
-    async function fetchPrice(symbol) {
-      try {
-        let url = `https://api.allorigins.win/raw?url=${encodeURIComponent("https://api.binance.com/api/v3/ticker/price?symbol=" + symbol)}`;
-        let res = await fetch(url);
-        let data = await res.json();
-        document.getElementById(symbol.toLowerCase()).innerText = `${symbol}: ${data.price}`;
-      } catch (e) {
-        document.getElementById(symbol.toLowerCase()).innerText = `${symbol}: ❌ خطا (${e.message})`;
+  <div class="wrap">
+    <div class="controls">
+      <label>تایم‌فریم:</label>
+      <select id="interval">
+        <option value="5m">5m</option>
+        <option value="15m" selected>15m</option>
+        <option value="1h">1h</option>
+        <option value="4h">4h</option>
+        <option value="1d">1d</option>
+      </select>
+      <button id="refreshBtn">بروزرسانی</button>
+      <span id="lastUpdate" class="note"></span>
+    </div>
+
+    <div class="table-wrap">
+      <table id="crypto-table">
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Price</th>
+            <th>RSI(14)</th>
+            <th>EMA9</th>
+            <th>EMA20</th>
+            <th>EMA50</th>
+            <th>EMA100</th>
+            <th>MACD</th>
+            <th>Signal</th>
+            <th>L</th>
+            <th>S</th>
+            <th>PP</th>
+            <th>Long</th>
+            <th>Short</th>
+            <th>Entry</th>
+            <th>Exit (TP/SL)</th>
+            <th>Support</th>
+            <th>Resistance</th>
+            <th>تثبیت روی حمایت؟</th>
+            <th>تثبیت روی مقاومت؟</th>
+            <th>Breakout</th>
+            <th>Bounce</th>
+            <th>Golden Cross</th>
+            <th>Rally</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      نکته: این ابزار صرفاً آموزشی است و سیگنال قطعی معامله محسوب نمی‌شود.
+    </div>
+  </div>
+
+<script>
+// ====== Config ======
+const SYMBOLS = [
+  "BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","SOLUSDT",
+  "ADAUSDT","DOGEUSDT","TRXUSDT","MATICUSDT","DOTUSDT",
+  "LTCUSDT","AVAXUSDT","LINKUSDT","ATOMUSDT","ETCUSDT",
+  "XLMUSDT","FILUSDT","APTUSDT","NEARUSDT","ICPUSDT"
+];
+const PROXY = (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
+const fmt = (n, d=2) => (n==null || isNaN(n)) ? "-" : Number(n).toLocaleString(undefined,{maximumFractionDigits:d});
+const withinPct = (price, level, pct=0.3) => {
+  if (!price || !level) return false;
+  const diff = Math.abs((price - level)/level)*100;
+  return diff <= pct;
+};
+
+// ====== Data Fetch ======
+async function fetchKlines(symbol, interval="15m", limit=300){
+  const url = PROXY(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+  const res = await fetch(url);
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  if(!Array.isArray(data)) throw new Error("Bad payload");
+  return data;
+}
+
+async function fetchDailyPivot(symbol){
+  const url = PROXY(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1d&limit=3`);
+  const res = await fetch(url);
+  if(!res.ok) return null;
+  const data = await res.json();
+  if(!Array.isArray(data) || data.length < 2) return null;
+  const prev = data[data.length-2];
+  const H = +prev[2], L = +prev[3], C = +prev[4];
+  const PP = (H+L+C)/3;
+  return PP;
+}
+
+// ====== Indicators ======
+function ema(values, period){
+  const k = 2/(period+1);
+  const out = [];
+  let prev = values[0];
+  out.push(prev);
+  for(let i=1;i<values.length;i++){
+    const v = values[i]*k + prev*(1-k);
+    out.push(v);
+    prev = v;
+  }
+  return out;
+}
+
+function rsi(values, period=14){
+  if(values.length < period+1) return [];
+  let gains=0, losses=0;
+  for(let i=1;i<=period;i++){
+    const diff = values[i]-values[i-1];
+    if(diff>=0) gains+=diff; else losses-=diff;
+  }
+  let avgGain=gains/period, avgLoss=losses/period;
+  const out = new Array(period).fill(null);
+  for(let i=period+1;i<values.length;i++){
+    const diff = values[i]-values[i-1];
+    const gain = diff>0?diff:0;
+    const loss = diff<0? -diff:0;
+    avgGain = (avgGain*(period-1)+gain)/period;
+    avgLoss = (avgLoss*(period-1)+loss)/period;
+    const rs = avgLoss===0 ? 1000 : avgGain/avgLoss;
+    out.push( 100 - (100/(1+rs)) );
+  }
+  return out;
+}
+
+function macd(values, fast=12, slow=26, signalPeriod=9){
+  const ef = ema(values, fast);
+  const es = ema(values, slow);
+  const macdLine = ef.map((v,i)=>(es[i]==null?null:(v-es[i])));
+  const start = slow;
+  const macdValid = macdLine.slice(start).filter(v=>v!=null);
+  const signalPart = ema(macdValid, signalPeriod);
+  const signalLine = new Array(start).fill(null).concat(signalPart);
+  return {macdLine, signalLine};
+}
+
+function atr(highs, lows, closes, period=14){
+  const trs = [];
+  for(let i=0;i<highs.length;i++){
+    if(i===0){ trs.push(highs[i]-lows[i]); continue; }
+    const hl = highs[i]-lows[i];
+    const hc = Math.abs(highs[i]-closes[i-1]);
+    const lc = Math.abs(lows[i]-closes[i-1]);
+    trs.push(Math.max(hl,hc,lc));
+  }
+  if(trs.length<period) return [];
+  let rma = trs.slice(0,period).reduce((a,b)=>a+b,0)/period;
+  const out = new Array(period-1).fill(null);
+  out.push(rma);
+  for(let i=period;i<trs.length;i++){
+    rma = (rma*(period-1)+trs[i])/period;
+    out.push(rma);
+  }
+  return out;
+}
+
+// ====== Main Build ======
+async function buildTable(){
+  const tbody = document.querySelector("#crypto-table tbody");
+  tbody.innerHTML = "";
+  const interval = document.getElementById("interval").value;
+
+  for(const symbol of SYMBOLS){
+    try{
+      const [kl, pp] = await Promise.all([fetchKlines(symbol, interval, 300), fetchDailyPivot(symbol)]);
+      const closes = kl.map(k=>+k[4]);
+      const highs  = kl.map(k=>+k[2]);
+      const lows   = kl.map(k=>+k[3]);
+      const vols   = kl.map(k=>+k[5]);
+      const last   = closes.at(-1);
+      const lastVol= vols.at(-1);
+
+      // Indicators
+      const ema9Arr   = ema(closes,9);
+      const ema20Arr  = ema(closes,20);
+      const ema50Arr  = ema(closes,50);
+      const ema100Arr = ema(closes,100);
+      const ema200Arr = ema(closes,200);
+      const rsiArr    = rsi(closes,14);
+      const {macdLine, signalLine} = macd(closes,12,26,9);
+      const atrArr    = atr(highs,lows,closes,14);
+
+      const ema9v   = ema9Arr.at(-1);
+      const ema20v  = ema20Arr.at(-1);
+      const ema50v  = ema50Arr.at(-1);
+      const ema100v = ema100Arr.at(-1);
+      const ema200v = ema200Arr.at(-1);
+      const rsiv    = rsiArr.at(-1);
+      const macdv   = macdLine.at(-1);
+      const sigv    = signalLine.at(-1);
+      const atrv    = atrArr.at(-1);
+
+      // Basic signals
+      const longCond  = last>ema20v && macdv!=null && sigv!=null && macdv>sigv && rsiv>50;
+      const shortCond = last<ema20v && macdv!=null && sigv!=null && macdv<sigv && rsiv<50;
+
+      // L / S / PP badges
+      const L = longCond ? "L" : "";
+      const S = shortCond ? "S" : "";
+      const PP = pp ? fmt(pp,2) : "-";
+
+      // Entry/Exit via ATR
+      let entry="-", exitPlan="-";
+      if(longCond && atrv){
+        entry   = last.toFixed(4);
+        const tp= (last + 1.5*atrv).toFixed(4);
+        const sl= (last - 1.0*atrv).toFixed(4);
+        exitPlan= `TP:${tp} | SL:${sl}`;
+      }else if(shortCond && atrv){
+        entry   = last.toFixed(4);
+        const tp= (last - 1.5*atrv).toFixed(4);
+        const sl= (last + 1.0*atrv).toFixed(4);
+        exitPlan= `TP:${tp} | SL:${sl}`;
       }
-    }
 
-    function update() {
-      fetchPrice("BTCUSDT");
-      fetchPrice("ETHUSDT");
-    }
+      // Support/Resistance (20 candles)
+      const last20 = closes.slice(-20);
+      const support = Math.min(...last20);
+      const resistance = Math.max(...last20);
 
-    update();
-    setInterval(update, 10000);
-  </script>
+      // Stabilization near S/R (±0.3%)
+      const onSupport = withinPct(last, support, 0.3) ? "✅" : "—";
+      const onResistance = withinPct(last, resistance, 0.3) ? "✅" : "—";
+
+      // Breakout: close > recent resistance * 1.002
+      const breakout = last > resistance*1.002 ? "✅" : "—";
+
+      // Bounce: near support and RSI rising vs one bar ago
+      const prevRsi = rsiArr.slice(-2)[0];
+      const bounce = withinPct(last, support, 0.3) && prevRsi!=null && rsiv>prevRsi ? "✅" : "—";
+
+      // Golden Cross: EMA50 crossed above EMA200 in last 3 bars
+      const ema50Prev = ema50Arr.at(-2), ema200Prev = ema200Arr.at(-2);
+      const golden = (ema50Prev!=null && ema200Prev!=null && ema50Prev<ema200Prev && ema50v>ema200v) ? "✅" : "—";
+
+      // Rally: strong up-move
+      const rally = (last>ema9v && last>ema20v && rsiv>70 && macdv>sigv) ? "✅" : "—";
+
+      // Build row
+      const macdClass = (macdv!=null && sigv!=null && (macdv - sigv)>=0) ? "positive" : "negative";
+      const longBadge  = longCond  ? '<span class="badge good">✅</span>' : '<span class="badge neutral">—</span>';
+      const shortBadge = shortCond ? '<span class="badge bad">⚠</span>'  : '<span class="badge neutral">—</span>';
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="nowrap">${symbol}</td>
+        <td>${fmt(last,4)}</td>
+        <td>${fmt(rsiv,2)}</td>
+        <td>${fmt(ema9v,4)}</td>
+        <td>${fmt(ema20v,4)}</td>
+        <td>${fmt(ema50v,4)}</td>
+        <td>${fmt(ema100v,4)}</td>
+        <td class="${macdClass}">${fmt(macdv,6)}</td>
+        <td class="${macdClass}">${fmt(sigv,6)}</td>
+        <td>${L}</td>
+        <td>${S}</td>
+        <td>${PP}</td>
+        <td>${longBadge}</td>
+        <td>${shortBadge}</td>
+        <td>${entry}</td>
+        <td>${exitPlan}</td>
+        <td>${fmt(support,4)}</td>
+        <td>${fmt(resistance,4)}</td>
+        <td>${onSupport}</td>
+        <td>${onResistance}</td>
+        <td>${breakout}</td>
+        <td>${bounce}</td>
+        <td>${golden}</td>
+        <td>${rally}</td>
+      `;
+      tbody.appendChild(tr);
+    }catch(err){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td colspan="24" class="negative">خطا برای ${symbol}: ${err.message}</td>`;
+      tbody.appendChild(tr);
+    }
+  }
+
+  document.getElementById("lastUpdate").textContent =
+    "آخرین بروزرسانی: " + new Date().toLocaleString();
+}
+
+document.getElementById("refreshBtn").addEventListener("click", buildTable);
+buildTable();
+setInterval(buildTable, 60000);
+</script>
 </body>
 </html>
