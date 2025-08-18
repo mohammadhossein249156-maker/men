@@ -32,6 +32,14 @@
         <th>EMA20</th>
         <th>EMA50</th>
         <th>EMA100</th>
+        <th>MACD</th>
+        <th>Signal</th>
+        <th>Long</th>
+        <th>Short</th>
+        <th>Entry Price</th>
+        <th>Exit Price</th>
+        <th>Support</th>
+        <th>Resistance</th>
       </tr>
     </thead>
     <tbody id="crypto-body"></tbody>
@@ -40,7 +48,7 @@
   <script>
     const symbols = ["BTCUSDT","ETHUSDT"];
 
-    // ===== محاسبات EMA =====
+    // EMA
     function calcEMA(values, period) {
       let k = 2 / (period + 1);
       let emaArray = [];
@@ -54,7 +62,7 @@
       return emaArray;
     }
 
-    // ===== محاسبه RSI =====
+    // RSI
     function calcRSI(values, period=14) {
       let gains = 0, losses = 0;
       for (let i = 1; i <= period; i++) {
@@ -66,6 +74,17 @@
       let rs = losses === 0 ? 100 : gains / losses;
       let rsi = 100 - (100 / (1 + rs));
       return rsi;
+    }
+
+    // MACD & Signal
+    function calcMACD(values) {
+      let ema12 = calcEMA(values, 12);
+      let ema26 = calcEMA(values, 26);
+      let macdLine = ema12.map((v, i) => v - ema26[i]);
+      let signalLine = calcEMA(macdLine.slice(26), 9);
+      let lastMACD = macdLine[macdLine.length - 1];
+      let lastSignal = signalLine[signalLine.length - 1];
+      return { macd: lastMACD, signal: lastSignal };
     }
 
     async function fetchKlines(symbol, interval="15m") {
@@ -92,9 +111,9 @@
         let row = document.createElement("tr");
         let klines = await fetchKlines(sym, interval);
         if (!klines) {
-          row.innerHTML = `<td>${sym}</td><td colspan="6">❌ API Error</td>`;
+          row.innerHTML = `<td>${sym}</td><td colspan="13">❌ API Error</td>`;
         } else {
-          let closes = klines.map(k => parseFloat(k[4])); // قیمت بسته شدن
+          let closes = klines.map(k => parseFloat(k[4]));
           let lastPrice = closes[closes.length-1];
 
           // EMA
@@ -106,6 +125,22 @@
           // RSI
           let rsi = calcRSI(closes.slice(-15), 14).toFixed(2);
 
+          // MACD
+          let { macd, signal } = calcMACD(closes);
+          macd = macd.toFixed(2);
+          signal = signal.toFixed(2);
+
+          // Long/Short signals
+          let long = macd > signal ? "✅" : "";
+          let short = macd < signal ? "❌" : "";
+          let entry = long ? lastPrice.toFixed(2) : "";
+          let exit = short ? lastPrice.toFixed(2) : "";
+
+          // Support/Resistance (ساده: کمترین/بیشترین 20 کندل اخیر)
+          let last20 = closes.slice(-20);
+          let support = Math.min(...last20).toFixed(2);
+          let resistance = Math.max(...last20).toFixed(2);
+
           row.innerHTML = `
             <td>${sym}</td>
             <td>${lastPrice}</td>
@@ -114,6 +149,14 @@
             <td>${ema20}</td>
             <td>${ema50}</td>
             <td>${ema100}</td>
+            <td>${macd}</td>
+            <td>${signal}</td>
+            <td>${long}</td>
+            <td>${short}</td>
+            <td>${entry}</td>
+            <td>${exit}</td>
+            <td>${support}</td>
+            <td>${resistance}</td>
           `;
         }
         tbody.appendChild(row);
