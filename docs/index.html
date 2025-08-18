@@ -1,105 +1,230 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa">
 <head>
-  <meta charset="UTF-8">
-  <title>📊 Crypto Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>📊 Crypto Dashboard – Top 20</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h2 { text-align: center; }
-    table { border-collapse: collapse; width: 100%; table-layout: fixed; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; white-space: nowrap; }
-    th { background-color: #f4f4f4; position: sticky; top: 0; z-index: 2; }
-    tbody tr:nth-child(even) { background-color: #f9f9f9; }
-    tbody tr:nth-child(odd) { background-color: #ffffff; }
-    /* Fix first 10 columns */
-    td:nth-child(-n+10), th:nth-child(-n+10) {
-      position: sticky;
-      left: 0;
-      background: #fff;
-      z-index: 1;
-    }
-    th:nth-child(-n+10) {
-      background: #eee;
-      z-index: 3;
-    }
+    body{font-family:tahoma,Arial,sans-serif;direction:rtl;background:#f5f7fb;margin:0}
+    header{background:#1e88e5;color:#fff;padding:14px 10px;text-align:center}
+    .wrap{max-width:1600px;margin:16px auto;padding:0 12px}
+    .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+    input,select,button{padding:8px 10px;border:1px solid #cfd8dc;border-radius:8px;font-family:inherit}
+    button{background:#1e88e5;color:#fff;cursor:pointer}
+    button:disabled{background:#90caf9;cursor:not-allowed}
+    .note{font-size:12px;color:#546e7a;margin-top:6px}
+    .table-wrap{overflow:auto;background:#fff;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+    table{border-collapse:collapse;width:100%;table-layout:auto}
+    th,td{border-bottom:1px solid #eee;padding:8px 10px;text-align:center;white-space:nowrap;font-size:13px}
+    th{background:#e3f2fd;color:#0d47a1;position:sticky;top:0;z-index:2}
+    tr:nth-child(even){background:#fafbff}
+    tr:hover{background:#f1f7ff}
+    th.sticky-col, td.sticky-col{position:sticky;left:0;background:#e3f2fd;z-index:3}
+    td.sticky-col{background:#fff;z-index:1}
+    th.sticky-col2, td.sticky-col2{position:sticky;left:60px;background:#e3f2fd;z-index:3}
+    td.sticky-col2{background:#fff;z-index:1}
+    .positive{color:#2e7d32;font-weight:600}
+    .negative{color:#c62828;font-weight:600}
+    .badge{padding:2px 6px;border-radius:8px;font-weight:600}
+    .good{background:#e8f5e9;color:#2e7d32}
+    .bad{background:#ffebee;color:#c62828}
+    .neutral{background:#eceff1;color:#37474f}
+    .muted{color:#607d8b}
+    .nowrap{white-space:nowrap}
+    .rsi-high{color:#c62828;font-weight:600}
+    .rsi-low{color:#1565c0;font-weight:600}
+    .tooltip{cursor:help;border-bottom:1px dashed #90a4ae}
   </style>
 </head>
 <body>
-  <h2>📊 Crypto Dashboard</h2>
-  <label for="timeframe">⏱ Select Timeframe:</label>
-  <select id="timeframe">
-    <option value="15m">15m</option>
-    <option value="1h">1h</option>
-    <option value="4h">4h</option>
-    <option value="1d">1d</option>
-  </select>
+  <header>
+    <h2>📊 ۲۰ کوین برتر بازار – Crypto Dashboard</h2>
+    <div style="font-size:12px;opacity:.9">منبع داده: Binance (OHLCV) از طریق Codetabs Proxy | اندیکاتورها در مرورگر محاسبه می‌شوند</div>
+  </header>
 
-  <table id="cryptoTable">
-    <thead>
-      <tr>
-        <th title="Trading pair symbol (e.g., BTCUSDT)">Symbol</th>
-        <th title="Current market price in USDT">Price (USDT)</th>
-        <th title="Relative Strength Index (0-100, overbought/oversold levels)">RSI</th>
-        <th title="Exponential Moving Average (9 periods)">EMA9</th>
-        <th title="Exponential Moving Average (20 periods)">EMA20</th>
-        <th title="Exponential Moving Average (50 periods)">EMA50</th>
-        <th title="Exponential Moving Average (100 periods)">EMA100</th>
-        <th title="MACD = EMA(12) - EMA(26)">MACD</th>
-        <th title="Signal line for MACD">Signal</th>
-        <th title="Trading direction suggestion: Long or Short">Signal (L/S)</th>
-        <th title="Suggested entry price for trade">Entry Price</th>
-        <th title="Exit price suggestion (Take Profit / Stop Loss)">Exit (TP/SL)</th>
-        <th title="Has price stabilized at support zone?">Support</th>
-        <th title="Has price stabilized at resistance zone?">Resistance</th>
-        <th title="Possible breakout pattern detected?">Breakout</th>
-        <th title="Possible bounce (reversal) detected?">Bounce</th>
-        <th title="Golden Cross (EMA50 crosses above EMA200)?">Golden Cross</th>
-        <th title="Price rally condition detected?">Rally</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>BTCUSDT</td>
-        <td>116,437.43</td>
-        <td>78.93</td>
-        <td>116,249.61</td>
-        <td>115,950.74</td>
-        <td>115,788.15</td>
-        <td>116,166.06</td>
-        <td>-120.5</td>
-        <td>-80.3</td>
-        <td>Short</td>
-        <td>116,300</td>
-        <td>115,700</td>
-        <td>No</td>
-        <td>Yes</td>
-        <td>No</td>
-        <td>Yes</td>
-        <td>No</td>
-        <td>No</td>
-      </tr>
-      <tr>
-        <td>ETHUSDT</td>
-        <td>4,338.40</td>
-        <td>60.91</td>
-        <td>4,337.29</td>
-        <td>4,327.25</td>
-        <td>4,326.24</td>
-        <td>4,362.60</td>
-        <td>-45.2</td>
-        <td>-30.7</td>
-        <td>Long</td>
-        <td>4,340</td>
-        <td>4,400</td>
-        <td>Yes</td>
-        <td>No</td>
-        <td>No</td>
-        <td>No</td>
-        <td>Yes</td>
-        <td>No</td>
-      </tr>
-    </tbody>
-  </table>
-</body>
-</html>
+  <div class="wrap">
+    <div class="controls">
+      <label>تایم‌فریم:</label>
+      <select id="interval">
+        <option value="5m">5m</option>
+        <option value="15m" selected>15m</option>
+        <option value="1h">1h</option>
+        <option value="4h">4h</option>
+        <option value="1d">1d</option>
+      </select>
+      <label>فیلتر:</label>
+      <select id="filter">
+        <option value="all">All</option>
+        <option value="long">Long</option>
+        <option value="short">Short</option>
+        <option value="breakout">Breakout</option>
+      </select>
+      <input type="text" id="search" placeholder="🔍 جستجو Symbol">
+      <button id="refreshBtn">بروزرسانی</button>
+      <span id="lastUpdate" class="note"></span>
+    </div>
+
+    <div class="table-wrap">
+      <table id="crypto-table">
+        <thead>
+          <tr>
+            <th class="sticky-col tooltip" title="نماد معاملاتی">Symbol</th>
+            <th class="sticky-col2 tooltip" title="قیمت لحظه‌ای">Price</th>
+            <th class="tooltip" title="Relative Strength Index (14)">RSI(14)</th>
+            <th class="tooltip" title="Exponential Moving Average (9)">EMA9</th>
+            <th class="tooltip" title="EMA (20)">EMA20</th>
+            <th class="tooltip" title="EMA (50)">EMA50</th>
+            <th class="tooltip" title="EMA (100)">EMA100</th>
+            <th class="tooltip" title="MACD Line">MACD</th>
+            <th class="tooltip" title="Signal Line">Signal</th>
+            <th class="tooltip" title="شرط Long (حروف)">L</th>
+            <th class="tooltip" title="شرط Short (حروف)">S</th>
+            <th class="tooltip" title="Pivot Point روزانه">PP</th>
+            <th class="tooltip" title="سیگنال Long (نهایی)">Long</th>
+            <th class="tooltip" title="سیگنال Short (نهایی)">Short</th>
+            <th class="tooltip" title="ورود پیشنهادی">Entry</th>
+            <th class="tooltip" title="خروج پیشنهادی (TP/SL)">Exit</th>
+            <th class="tooltip" title="حمایت محلی (20 کندل)">Support</th>
+            <th class="tooltip" title="مقاومت محلی (20 کندل)">Resistance</th>
+            <th class="tooltip" title="تثبیت روی حمایت">حمایت؟</th>
+            <th class="tooltip" title="تثبیت روی مقاومت">مقاومت؟</th>
+            <th class="tooltip" title="شکست مقاومت اخیر">Breakout</th>
+            <th class="tooltip" title="برگشت از حمایت">Bounce</th>
+            <th class="tooltip" title="EMA50 بالای EMA200">Golden Cross</th>
+            <th class="tooltip" title="روند صعودی قوی">Rally</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      ⚠️ نکته: این ابزار صرفاً آموزشی است و سیگنال قطعی معامله محسوب نمی‌شود.
+    </div>
+  </div>
+
+<script>
+// ===== Config =====
+const SYMBOLS = [
+  "BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","SOLUSDT",
+  "ADAUSDT","DOGEUSDT","TRXUSDT","MATICUSDT","DOTUSDT",
+  "LTCUSDT","AVAXUSDT","LINKUSDT","ATOMUSDT","ETCUSDT",
+  "XLMUSDT","FILUSDT","APTUSDT","NEARUSDT","ICPUSDT"
+];
+const PROXY = (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
+const fmt = (n,d=2) => (n==null||isNaN(n))?"-":Number(n).toLocaleString(undefined,{maximumFractionDigits:d});
+const withinPct = (price,level,pct=0.3)=>{if(!price||!level)return false;return Math.abs((price-level)/level)*100<=pct};
+
+// ===== Fetch =====
+async function fetchKlines(symbol,interval="15m",limit=300){
+  const url=PROXY(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+  const res=await fetch(url);if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data=await res.json();if(!Array.isArray(data)) throw new Error("Bad payload");
+  return data;
+}
+async function fetchDailyPivot(symbol){
+  const url=PROXY(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1d&limit=3`);
+  const res=await fetch(url);if(!res.ok) return null;
+  const data=await res.json();if(!Array.isArray(data)||data.length<2) return null;
+  const prev=data[data.length-2];const H=+prev[2],L=+prev[3],C=+prev[4];return (H+L+C)/3;
+}
+
+// ===== Indicators =====
+function ema(values,period){const k=2/(period+1);const out=[];let prev=values[0];out.push(prev);for(let i=1;i<values.length;i++){const v=values[i]*k+prev*(1-k);out.push(v);prev=v}return out}
+function rsi(values,period=14){if(values.length<period+1)return[];let gains=0,losses=0;for(let i=1;i<=period;i++){const diff=values[i]-values[i-1];if(diff>=0)gains+=diff;else losses-=diff;}let avgGain=gains/period,avgLoss=losses/period;const out=new Array(period).fill(null);for(let i=period+1;i<values.length;i++){const diff=values[i]-values[i-1];const gain=diff>0?diff:0;const loss=diff<0?-diff:0;avgGain=(avgGain*(period-1)+gain)/period;avgLoss=(avgLoss*(period-1)+loss)/period;const rs=avgLoss===0?1000:avgGain/avgLoss;out.push(100-(100/(1+rs)))}return out}
+function macd(values,fast=12,slow=26,signalPeriod=9){const ef=ema(values,fast);const es=ema(values,slow);const macdLine=ef.map((v,i)=>(es[i]==null?null:(v-es[i])));const start=slow;const macdValid=macdLine.slice(start).filter(v=>v!=null);const signalPart=ema(macdValid,signalPeriod);const signalLine=new Array(start).fill(null).concat(signalPart);return{macdLine,signalLine}}
+function atr(highs,lows,closes,period=14){const trs=[];for(let i=0;i<highs.length;i++){if(i===0){trs.push(highs[i]-lows[i]);continue;}const hl=highs[i]-lows[i];const hc=Math.abs(highs[i]-closes[i-1]);const lc=Math.abs(lows[i]-closes[i-1]);trs.push(Math.max(hl,hc,lc));}if(trs.length<period)return[];let rma=trs.slice(0,period).reduce((a,b)=>a+b,0)/period;const out=new Array(period-1).fill(null);out.push(rma);for(let i=period;i<trs.length;i++){rma=(rma*(period-1)+trs[i])/period;out.push(rma)}return out}
+
+// ===== Build Table =====
+async function buildTable(){
+  const tbody=document.querySelector("#crypto-table tbody");
+  tbody.innerHTML="";
+  const interval=document.getElementById("interval").value;
+
+  for(const symbol of SYMBOLS){
+    try{
+      const [kl,pp]=await Promise.all([fetchKlines(symbol,interval,300),fetchDailyPivot(symbol)]);
+      const closes=kl.map(k=>+k[4]),highs=kl.map(k=>+k[2]),lows=kl.map(k=>+k[3]),vols=kl.map(k=>+k[5]);
+      const last=closes.at(-1),lastVol=vols.at(-1);
+      const ema9Arr=ema(closes,9),ema20Arr=ema(closes,20),ema50Arr=ema(closes,50),ema100Arr=ema(closes,100),ema200Arr=ema(closes,200);
+      const rsiArr=rsi(closes,14);const {macdLine,signalLine}=macd(closes,12,26,9);const atrArr=atr(highs,lows,closes,14);
+
+      const ema9v=ema9Arr.at(-1),ema20v=ema20Arr.at(-1),ema50v=ema50Arr.at(-1),ema100v=ema100Arr.at(-1),ema200v=ema200Arr.at(-1);
+      const rsiv=rsiArr.at(-1),macdv=macdLine.at(-1),sigv=signalLine.at(-1),atrv=atrArr.at(-1);
+
+      const longCond=last>ema20v&&macdv!=null&&sigv!=null&&macdv>sigv&&rsiv>50;
+      const shortCond=last<ema20v&&macdv!=null&&sigv!=null&&macdv<sigv&&rsiv<50;
+
+      const L=longCond?"L":"",S=shortCond?"S":"",PP=pp?fmt(pp,2):"-";
+
+      let entry="-",exitPlan="-";
+      if(longCond&&atrv){entry=last.toFixed(4);exitPlan=`TP:${(last+1.5*atrv).toFixed(4)} | SL:${(last-1.0*atrv).toFixed(4)}`}
+      else if(shortCond&&atrv){entry=last.toFixed(4);exitPlan=`TP:${(last-1.5*atrv).toFixed(4)} | SL:${(last+1.0*atrv).toFixed(4)}`}
+
+      const last20=closes.slice(-20),support=Math.min(...last20),resistance=Math.max(...last20);
+      const onSupport=withinPct(last,support,0.3)?"✅":"—",onResistance=withinPct(last,resistance,0.3)?"✅":"—";
+      const breakout=last>resistance*1.002?"✅":"—";const prevRsi=rsiArr.slice(-2)[0];
+      const bounce=withinPct(last,support,0.3)&&prevRsi!=null&&rsiv>prevRsi?"✅":"—";
+      const ema50Prev=ema50Arr.at(-2),ema200Prev=ema200Arr.at(-2);
+      const golden=(ema50Prev!=null&&ema200Prev!=null&&ema50Prev<ema200Prev&&ema50v>ema200v)?"✅":"—";
+      const rally=(last>ema9v&&last>ema20v&&rsiv>70&&macdv>sigv)?"✅":"—";
+
+      const macdClass=(macdv!=null&&sigv!=null&&(macdv-sigv)>=0)?"positive":"negative";
+      const longBadge=longCond?'<span class="badge good">✅</span>':'<span class="badge neutral">—</span>';
+      const shortBadge=shortCond?'<span class="badge bad">⚠</span>':'<span class="badge neutral">—</span>';
+      const rsiClass=rsiv>=70?"rsi-high":(rsiv<=30?"rsi-low":"");
+
+      const tr=document.createElement("tr");
+      tr.setAttribute("data-long",longCond);
+      tr.setAttribute("data-short",shortCond);
+      tr.setAttribute("data-breakout",breakout==="✅");
+
+      tr.innerHTML=`
+        <td class="sticky-col nowrap">${symbol}</td>
+        <td class="sticky-col2">${fmt(last,4)}</td>
+        <td class="${rsiClass}">${fmt(rsiv,2)}</td>
+        <td>${fmt(ema9v,4)}</td>
+        <td>${fmt(ema20v,4)}</td>
+        <td>${fmt(ema50v,4)}</td>
+        <td>${fmt(ema100v,4)}</td>
+        <td class="${macdClass}">${fmt(macdv,6)}</td>
+        <td class="${macdClass}">${fmt(sigv,6)}</td>
+        <td>${L}</td>
+        <td>${S}</td>
+        <td>${PP}</td>
+        <td>${longBadge}</td>
+        <td>${shortBadge}</td>
+        <td>${entry}</td>
+        <td>${exitPlan}</td>
+        <td>${fmt(support,4)}</td>
+        <td>${fmt(resistance,4)}</td>
+        <td>${onSupport}</td>
+        <td>${onResistance}</td>
+        <td>${breakout}</td>
+        <td>${bounce}</td>
+        <td>${golden}</td>
+        <td>${rally}</td>`;
+      tbody.appendChild(tr);
+    }catch(err){
+      const tr=document.createElement("tr");
+      tr.innerHTML=`<td colspan="24" class="negative">خطا برای ${symbol}: ${err.message}</td>`;
+      tbody.appendChild(tr);
+    }
+  }
+  document.getElementById("lastUpdate").textContent="آخرین بروزرسانی: "+new Date().toLocaleString();
+  applyFilter();
+}
+function applyFilter(){
+  const filter=document.getElementById("filter").value;
+  const search=document.getElementById("search").value.toUpperCase();
+  document.querySelectorAll("#crypto-table tbody tr").forEach(tr=>{
+    const sym=tr.querySelector("td").innerText;
+    let show=true;
+    if(search&& !sym.includes(search)) show=false;
+    if(filter==="long"&&tr.getAttribute("data-long")!=="true") show=false;
+    if(filter==="short"&&tr.getAttribute("data-short")!=="true") show=false;
+    if(filter==="breakout"&&tr.getAttribute("data-breakout")!=="true") show=false;
+    tr.style.display=show?"":"none";
+  });
+}
+document.getElementById("filter").addEventListener
