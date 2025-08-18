@@ -6,7 +6,7 @@
   <style>
     body { font-family: Tahoma, sans-serif; direction: rtl; background:#f7f7f7; padding:20px; }
     table { border-collapse: collapse; width: 100%; background:#fff; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; font-size:14px; }
     th { background: #333; color: #fff; }
   </style>
 </head>
@@ -32,14 +32,6 @@
         <th>EMA20</th>
         <th>EMA50</th>
         <th>EMA100</th>
-        <th>MACD</th>
-        <th>Signal</th>
-        <th>Long</th>
-        <th>Short</th>
-        <th>Entry Price</th>
-        <th>Exit Price</th>
-        <th>Support</th>
-        <th>Resistance</th>
       </tr>
     </thead>
     <tbody id="crypto-body"></tbody>
@@ -48,14 +40,42 @@
   <script>
     const symbols = ["BTCUSDT","ETHUSDT"];
 
+    // ===== محاسبات EMA =====
+    function calcEMA(values, period) {
+      let k = 2 / (period + 1);
+      let emaArray = [];
+      let prevEma = values[0];
+      emaArray.push(prevEma);
+      for (let i = 1; i < values.length; i++) {
+        let ema = values[i] * k + prevEma * (1 - k);
+        emaArray.push(ema);
+        prevEma = ema;
+      }
+      return emaArray;
+    }
+
+    // ===== محاسبه RSI =====
+    function calcRSI(values, period=14) {
+      let gains = 0, losses = 0;
+      for (let i = 1; i <= period; i++) {
+        let diff = values[i] - values[i-1];
+        if (diff >= 0) gains += diff; else losses -= diff;
+      }
+      gains /= period;
+      losses /= period;
+      let rs = losses === 0 ? 100 : gains / losses;
+      let rsi = 100 - (100 / (1 + rs));
+      return rsi;
+    }
+
     async function fetchKlines(symbol, interval="15m") {
       try {
         let url = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(
-          "https://api.binance.com/api/v3/klines?symbol=" + symbol + "&interval=" + interval + "&limit=100"
+          "https://api.binance.com/api/v3/klines?symbol=" + symbol + "&interval=" + interval + "&limit=120"
         )}`;
         let res = await fetch(url);
         let klines = await res.json();
-        if (!Array.isArray(klines)) throw new Error("Not array: " + JSON.stringify(klines));
+        if (!Array.isArray(klines)) throw new Error("Not array");
         return klines;
       } catch (e) {
         console.error("❌ Error for", symbol, e);
@@ -72,15 +92,28 @@
         let row = document.createElement("tr");
         let klines = await fetchKlines(sym, interval);
         if (!klines) {
-          row.innerHTML = `<td>${sym}</td><td colspan="13">❌ API Error</td>`;
+          row.innerHTML = `<td>${sym}</td><td colspan="6">❌ API Error</td>`;
         } else {
-          let lastClose = parseFloat(klines[klines.length-1][4]);
+          let closes = klines.map(k => parseFloat(k[4])); // قیمت بسته شدن
+          let lastPrice = closes[closes.length-1];
+
+          // EMA
+          let ema9 = calcEMA(closes, 9).pop().toFixed(2);
+          let ema20 = calcEMA(closes, 20).pop().toFixed(2);
+          let ema50 = calcEMA(closes, 50).pop().toFixed(2);
+          let ema100 = calcEMA(closes, 100).pop().toFixed(2);
+
+          // RSI
+          let rsi = calcRSI(closes.slice(-15), 14).toFixed(2);
+
           row.innerHTML = `
             <td>${sym}</td>
-            <td>${lastClose}</td>
-            <td>—</td><td>—</td><td>—</td><td>—</td>
-            <td>—</td><td>—</td><td>—</td>
-            <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+            <td>${lastPrice}</td>
+            <td>${rsi}</td>
+            <td>${ema9}</td>
+            <td>${ema20}</td>
+            <td>${ema50}</td>
+            <td>${ema100}</td>
           `;
         }
         tbody.appendChild(row);
