@@ -1,27 +1,28 @@
 <!DOCTYPE html>
 <html lang="fa">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>📊 Crypto Dashboard</title>
   <style>
-    body { font-family: Tahoma, sans-serif; direction: rtl; margin: 20px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    th, td { border: 1px solid #999; padding: 6px; text-align: center; }
-    th { background: #f0f0f0; }
-    select { margin: 10px; padding: 4px; }
+    body { font-family: Tahoma, sans-serif; direction: rtl; background:#f7f7f7; padding:20px; }
+    table { border-collapse: collapse; width: 100%; background:#fff; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background: #333; color: #fff; }
   </style>
 </head>
 <body>
   <h1>📊 Crypto Dashboard</h1>
   <label>⏱ انتخاب تایم‌فریم:
-    <select id="timeframe">
+    <select id="interval">
       <option value="15m">15m</option>
       <option value="1h">1h</option>
       <option value="4h">4h</option>
       <option value="1d">1d</option>
     </select>
   </label>
-  <table>
+  <br><br>
+
+  <table id="crypto-table">
     <thead>
       <tr>
         <th>Symbol</th>
@@ -41,71 +42,53 @@
         <th>Resistance</th>
       </tr>
     </thead>
-    <tbody id="table-body">
-      <tr><td colspan="15">⏳ در حال بارگذاری...</td></tr>
-    </tbody>
+    <tbody id="crypto-body"></tbody>
   </table>
 
   <script>
-    const symbols = ["BTCUSDT", "ETHUSDT"];
+    const symbols = ["BTCUSDT","ETHUSDT"];
 
     async function fetchKlines(symbol, interval="15m") {
       try {
-        let url = `https://api.allorigins.win/raw?url=${encodeURIComponent(
+        let url = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(
           "https://api.binance.com/api/v3/klines?symbol=" + symbol + "&interval=" + interval + "&limit=100"
         )}`;
         let res = await fetch(url);
         let klines = await res.json();
-        if (!Array.isArray(klines)) throw new Error("API response is not an array");
+        if (!Array.isArray(klines)) throw new Error("Not array: " + JSON.stringify(klines));
         return klines;
       } catch (e) {
-        console.error("❌ Error fetching klines for", symbol, e);
-        return null;
-      }
-    }
-
-    async function fetchPrice(symbol) {
-      try {
-        let url = `https://api.allorigins.win/raw?url=${encodeURIComponent(
-          "https://api.binance.com/api/v3/ticker/price?symbol=" + symbol
-        )}`;
-        let res = await fetch(url);
-        let data = await res.json();
-        return parseFloat(data.price);
-      } catch (e) {
-        console.error("❌ Error fetching price", symbol, e);
+        console.error("❌ Error for", symbol, e);
         return null;
       }
     }
 
     async function updateTable() {
-      const interval = document.getElementById("timeframe").value;
-      const tbody = document.getElementById("table-body");
+      let interval = document.getElementById("interval").value;
+      let tbody = document.getElementById("crypto-body");
       tbody.innerHTML = "";
 
-      for (let symbol of symbols) {
-        let price = await fetchPrice(symbol);
-        let klines = await fetchKlines(symbol, interval);
-
+      for (let sym of symbols) {
         let row = document.createElement("tr");
+        let klines = await fetchKlines(sym, interval);
         if (!klines) {
-          row.innerHTML = `<td>${symbol}</td><td colspan="14">❌ API Error</td>`;
+          row.innerHTML = `<td>${sym}</td><td colspan="13">❌ API Error</td>`;
         } else {
+          let lastClose = parseFloat(klines[klines.length-1][4]);
           row.innerHTML = `
-            <td>${symbol}</td>
-            <td>${price ?? "—"}</td>
+            <td>${sym}</td>
+            <td>${lastClose}</td>
             <td>—</td><td>—</td><td>—</td><td>—</td>
-            <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
-            <td>—</td><td>—</td><td>—</td><td>—</td>
+            <td>—</td><td>—</td><td>—</td>
+            <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
           `;
         }
         tbody.appendChild(row);
       }
     }
 
-    document.getElementById("timeframe").addEventListener("change", updateTable);
+    document.getElementById("interval").addEventListener("change", updateTable);
     updateTable();
-    setInterval(updateTable, 20000);
   </script>
 </body>
 </html>
