@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Crypto Price Test</title>
+</head>
+<body>
+  <h1>قیمت لحظه‌ای</h1>
+  <div id="btc">BTCUSDT: ...</div>
+  <div id="eth">ETHUSDT: ...</div>
+
+  <script>
+    async function fetchPrice(symbol) {
+      try {
+        let url = `https://api.allorigins.win/raw?url=${encodeURIComponent("https://api.binance.com/api/v3/ticker/price?symbol=" + symbol)}`;
+        let res = await fetch(url);
+        let data = await res.json();
+        document.getElementById(symbol.toLowerCase()).innerText = `${symbol}: ${data.price}`;
+      } catch (e) {
+        document.getElementById(symbol.toLowerCase()).innerText = `${symbol}: ❌ خطا (${e.message})`;
+      }
+    }
+
+    function update() {
+      fetchPrice("BTCUSDT");
+      fetchPrice("ETHUSDT");
+    }
+
+    update();
+    setInterval(update, 10000);
+  </script>
+</body>
+</html>
