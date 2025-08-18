@@ -6,6 +6,7 @@
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f9; }
     h1 { text-align: center; }
+    #controls { text-align: center; margin-bottom: 20px; }
     table { border-collapse: collapse; width: 100%; margin-top: 20px; background: white; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     th { background: #333; color: white; }
@@ -14,69 +15,156 @@
 </head>
 <body>
   <h1>📊 Crypto Dashboard</h1>
+
+  <div id="controls">
+    <label for="timeframe">⏱ انتخاب تایم‌فریم: </label>
+    <select id="timeframe">
+      <option value="1m">1m</option>
+      <option value="5m">5m</option>
+      <option value="15m">15m</option>
+      <option value="1h" selected>1h</option>
+      <option value="4h">4h</option>
+      <option value="1d">1d</option>
+    </select>
+  </div>
+
   <table id="crypto-table">
     <thead>
       <tr>
         <th>Symbol</th>
         <th>Price (USDT)</th>
-        <th>MACD</th>
         <th>RSI</th>
         <th>EMA9</th>
         <th>EMA20</th>
         <th>EMA50</th>
         <th>EMA100</th>
+        <th>MACD</th>
+        <th>Signal</th>
         <th>Long</th>
         <th>Short</th>
         <th>Entry Price</th>
         <th>Exit Price</th>
-        <th>Support?</th>
-        <th>Resistance?</th>
+        <th>Support</th>
+        <th>Resistance</th>
       </tr>
     </thead>
     <tbody>
-      <tr><td colspan="14">Loading...</td></tr>
+      <tr><td colspan="15">Loading...</td></tr>
     </tbody>
   </table>
 
   <script>
     const symbols = ["BTCUSDT", "ETHUSDT"];
+    let tradeState = {}; // ذخیره ورود/خروج برای هر سمبل
+
+    // EMA
+    function calculateEMA(data, period) {
+      let k = 2 / (period + 1);
+      let emaArray = [data[0]];
+      for (let i = 1; i < data.length; i++) {
+        emaArray.push(data[i] * k + emaArray[i - 1] * (1 - k));
+      }
+      return emaArray;
+    }
+
+    // RSI
+    function calculateRSI(data, period = 14) {
+      let gains = 0, losses = 0;
+      for (let i = 1; i <= period; i++) {
+        let diff = data[i] - data[i - 1];
+        if (diff >= 0) gains += diff;
+        else losses -= diff;
+      }
+      let avgGain = gains / period;
+      let avgLoss = losses / period;
+      let rs = avgGain / (avgLoss || 1);
+      return 100 - (100 / (1 + rs));
+    }
 
     async function fetchData() {
       const tbody = document.querySelector("#crypto-table tbody");
       tbody.innerHTML = "";
+      const timeframe = document.getElementById("timeframe").value;
+
       for (let sym of symbols) {
         try {
-          // استفاده از AllOrigins برای دور زدن محدودیت CORS
-          let url = `https://api.allorigins.win/raw?url=${encodeURIComponent("https://api.binance.com/api/v3/ticker/price?symbol=" + sym)}`;
-          let res = await fetch(url);
-          let data = await res.json();
-          let price = parseFloat(data.price).toFixed(2);
+          let proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent("https://api.binance.com/api/v3/klines?symbol=" + sym + "&interval=" + timeframe + "&limit=120")}`;
+          let res = await fetch(proxyUrl);
+          let klines = await res.json();
+
+          let closes = klines.map(k => parseFloat(k[4]));
+          let highs = klines.map(k => parseFloat(k[2]));
+          let lows = klines.map(k => parseFloat(k[3]));
+
+          let price = closes[closes.length - 1].toFixed(2);
+
+          // EMAها
+          let ema9 = calculateEMA(closes, 9).pop().toFixed(2);
+          let ema20 = calculateEMA(closes, 20).pop().toFixed(2);
+          let ema50 = calculateEMA(closes, 50).pop().toFixed(2);
+          let ema100 = calculateEMA(closes, 100).pop().toFixed(2);
+
+          // RSI
+          let rsi = calculateRSI(closes).toFixed(2);
+
+          // MACD
+          let ema12Arr = calculateEMA(closes, 12);
+          let ema26Arr = calculateEMA(closes, 26);
+          let macdArr = ema12Arr.map((v, i) => v - ema26Arr[i]);
+          let macd = macdArr[macdArr.length - 1].toFixed(2);
+          let signal = calculateEMA(macdArr.slice(-50), 9).pop().toFixed(2);
+
+          let longSignal = macd > signal ? "✅" : "—";
+          let shortSignal = macd < signal ? "⚠️" : "—";
+
+          // ورود/خروج
+          if (!tradeState[sym]) tradeState[sym] = { entry: null, exit: null, position: null };
+
+          if (longSignal === "✅" && tradeState[sym].position !== "LONG") {
+            tradeState[sym].entry = price;
+            tradeState[sym].exit = null;
+            tradeState[sym].position = "LONG";
+          } else if (shortSignal === "⚠️" && tradeState[sym].position !== "SHORT") {
+            tradeState[sym].exit = price;
+            tradeState[sym].position = "SHORT";
+          }
+
+          // حمایت/مقاومت
+          let recentHighs = highs.slice(-20);
+          let recentLows = lows.slice(-20);
+          let resistance = Math.max(...recentHighs).toFixed(2);
+          let support = Math.min(...recentLows).toFixed(2);
+
+          let supportCheck = Math.abs(price - support) / price < 0.005 ? "🟢" : "—";
+          let resistanceCheck = Math.abs(price - resistance) / price < 0.005 ? "🔴" : "—";
 
           let row = `<tr>
             <td>${sym}</td>
             <td>${price}</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
+            <td>${rsi}</td>
+            <td>${ema9}</td>
+            <td>${ema20}</td>
+            <td>${ema50}</td>
+            <td>${ema100}</td>
+            <td>${macd}</td>
+            <td>${signal}</td>
+            <td>${longSignal}</td>
+            <td>${shortSignal}</td>
+            <td>${tradeState[sym].entry || "—"}</td>
+            <td>${tradeState[sym].exit || "—"}</td>
+            <td>${supportCheck} (${support})</td>
+            <td>${resistanceCheck} (${resistance})</td>
           </tr>`;
           tbody.innerHTML += row;
         } catch (e) {
-          tbody.innerHTML += `<tr><td colspan="14">خطا برای ${sym}: ${e.message}</td></tr>`;
+          tbody.innerHTML += `<tr><td colspan="15">❌ خطا برای ${sym}: ${e.message}</td></tr>`;
         }
       }
     }
 
     fetchData();
-    setInterval(fetchData, 30000); // هر ۳۰ ثانیه بروزرسانی
+    setInterval(fetchData, 30000);
+    document.getElementById("timeframe").addEventListener("change", fetchData);
   </script>
 </body>
 </html>
