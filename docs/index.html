@@ -13,31 +13,31 @@
     button{background:#1e88e5;color:#fff;cursor:pointer}
     button:disabled{background:#90caf9;cursor:not-allowed}
     .note{font-size:12px;color:#546e7a;margin-top:6px}
-    .table-wrap{overflow:auto;background:#fff;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+    .table-wrap{overflow:auto;background:#fff;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.08);max-height:75vh}
     table{border-collapse:collapse;width:100%}
     th,td{border-bottom:1px solid #eee;padding:8px 10px;text-align:center;white-space:nowrap;font-size:13px}
     th{background:#e3f2fd;color:#0d47a1;position:sticky;top:0;z-index:2}
-    tr:nth-child(even){background:#fafafa}
-    tr:nth-child(odd){background:#fff}
-    tr:hover{background:#f0f8ff}
+    td:first-child, th:first-child,
+    td:nth-child(2), th:nth-child(2),
+    td:nth-child(3), th:nth-child(3),
+    td:nth-child(4), th:nth-child(4),
+    td:nth-child(5), th:nth-child(5) {
+      position: sticky;
+      left: 0;
+      background: #fff;
+      z-index: 3;
+    }
+    tr:nth-child(even){background:#f9fbfd}
+    tr:hover{background:#f1f8ff}
     .positive{color:#2e7d32;font-weight:600}
     .negative{color:#c62828;font-weight:600}
+    .rsi-high{color:#c62828;font-weight:600}
+    .rsi-low{color:#2e7d32;font-weight:600}
     .badge{padding:2px 6px;border-radius:8px;font-weight:600}
     .good{background:#e8f5e9;color:#2e7d32}
     .bad{background:#ffebee;color:#c62828}
     .neutral{background:#eceff1;color:#37474f}
-    .muted{color:#607d8b}
     .nowrap{white-space:nowrap}
-    /* RSI رنگی */
-    .rsi-high{color:#c62828;font-weight:bold}
-    .rsi-low{color:#2e7d32;font-weight:bold}
-    /* ستون‌های ثابت */
-    th.sticky, td.sticky{position:sticky;left:0;z-index:3;background:#fff}
-    td.sticky:nth-child(1),th.sticky:nth-child(1){z-index:4}
-    td.sticky:nth-child(2){left:70px}
-    td.sticky:nth-child(3){left:140px}
-    td.sticky:nth-child(4){left:210px}
-    td.sticky:nth-child(5){left:280px}
   </style>
 </head>
 <body>
@@ -64,30 +64,30 @@
       <table id="crypto-table">
         <thead>
           <tr>
-            <th class="sticky" title="نماد معاملاتی">Symbol</th>
-            <th class="sticky" title="آخرین قیمت">Price</th>
-            <th class="sticky" title="شاخص قدرت نسبی 14 دوره‌ای">RSI(14)</th>
-            <th class="sticky" title="میانگین متحرک نمایی 9">EMA9</th>
-            <th class="sticky" title="میانگین متحرک نمایی 20">EMA20</th>
-            <th title="میانگین متحرک نمایی 50">EMA50</th>
-            <th title="میانگین متحرک نمایی 100">EMA100</th>
-            <th title="MACD (12,26)">MACD</th>
+            <th title="نماد معاملاتی">Symbol</th>
+            <th title="قیمت لحظه‌ای">Price</th>
+            <th title="Relative Strength Index (14)">RSI(14)</th>
+            <th title="Exponential Moving Average - 9">EMA9</th>
+            <th title="Exponential Moving Average - 20">EMA20</th>
+            <th title="Exponential Moving Average - 50">EMA50</th>
+            <th title="Exponential Moving Average - 100">EMA100</th>
+            <th title="Moving Average Convergence Divergence">MACD</th>
             <th title="خط سیگنال MACD">Signal</th>
-            <th title="شرط لانگ">L</th>
-            <th title="شرط شورت">S</th>
+            <th title="شرط لانگ ساده">L</th>
+            <th title="شرط شورت ساده">S</th>
             <th title="Pivot Point روزانه">PP</th>
-            <th title="سیگنال Long">Long</th>
-            <th title="سیگنال Short">Short</th>
-            <th title="نقطه ورود">Entry</th>
-            <th title="خروج: حد سود/ضرر">Exit (TP/SL)</th>
-            <th title="حمایت 20 کندل اخیر">Support</th>
-            <th title="مقاومت 20 کندل اخیر">Resistance</th>
-            <th title="قیمت نزدیک حمایت؟">تثبیت روی حمایت؟</th>
-            <th title="قیمت نزدیک مقاومت؟">تثبیت روی مقاومت؟</th>
+            <th title="سیگنال لانگ">Long</th>
+            <th title="سیگنال شورت">Short</th>
+            <th title="محدوده ورود">Entry</th>
+            <th title="اهداف و استاپ خروج">Exit (TP/SL)</th>
+            <th title="حمایت اخیر">Support</th>
+            <th title="مقاومت اخیر">Resistance</th>
+            <th title="تثبیت روی حمایت؟">تثبیت روی حمایت؟</th>
+            <th title="تثبیت روی مقاومت؟">تثبیت روی مقاومت؟</th>
             <th title="شکست مقاومت">Breakout</th>
             <th title="بازگشت از حمایت">Bounce</th>
-            <th title="تقاطع طلایی (EMA50>EMA200)">Golden Cross</th>
-            <th title="رالی (قدرت صعودی قوی)">Rally</th>
+            <th title="تقاطع طلایی">Golden Cross</th>
+            <th title="رالی صعودی">Rally</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -103,96 +103,55 @@
 const SYMBOLS = ["BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","SOLUSDT","ADAUSDT","DOGEUSDT","TRXUSDT","MATICUSDT","DOTUSDT","LTCUSDT","AVAXUSDT","LINKUSDT","ATOMUSDT","ETCUSDT","XLMUSDT","FILUSDT","APTUSDT","NEARUSDT","ICPUSDT"];
 const PROXY = (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
 const fmt = (n, d=2) => (n==null || isNaN(n)) ? "-" : Number(n).toLocaleString(undefined,{maximumFractionDigits:d});
-const withinPct = (price, level, pct=0.3) => {
-  if (!price || !level) return false;
-  const diff = Math.abs((price - level)/level)*100;
-  return diff <= pct;
-};
+const withinPct = (price, level, pct=0.3) => {if (!price || !level) return false;const diff = Math.abs((price - level)/level)*100;return diff <= pct;};
 
-async function fetchKlines(symbol, interval="15m", limit=300){
-  const url = PROXY(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
-  const res = await fetch(url);
-  const data = await res.json();
-  return data;
-}
+function ema(values, period){const k = 2/(period+1);const out = [];let prev = values[0];out.push(prev);for(let i=1;i<values.length;i++){const v = values[i]*k + prev*(1-k);out.push(v);prev = v;}return out;}
+function rsi(values, period=14){if(values.length < period+1) return [];let gains=0, losses=0;for(let i=1;i<=period;i++){const diff = values[i]-values[i-1];if(diff>=0) gains+=diff; else losses-=diff;}let avgGain=gains/period, avgLoss=losses/period;const out = new Array(period).fill(null);for(let i=period+1;i<values.length;i++){const diff = values[i]-values[i-1];const gain = diff>0?diff:0;const loss = diff<0? -diff:0;avgGain = (avgGain*(period-1)+gain)/period;avgLoss = (avgLoss*(period-1)+loss)/period;const rs = avgLoss===0 ? 1000 : avgGain/avgLoss;out.push( 100 - (100/(1+rs)) );}return out;}
+function macd(values, fast=12, slow=26, signalPeriod=9){const ef = ema(values, fast);const es = ema(values, slow);const macdLine = ef.map((v,i)=>(es[i]==null?null:(v-es[i])));const start = slow;const macdValid = macdLine.slice(start).filter(v=>v!=null);const signalPart = ema(macdValid, signalPeriod);const signalLine = new Array(start).fill(null).concat(signalPart);return {macdLine, signalLine};}
 
-async function fetchDailyPivot(symbol){
-  const url = PROXY(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1d&limit=3`);
-  const res = await fetch(url);
-  const data = await res.json();
-  const prev = data[data.length-2];
-  const H = +prev[2], L = +prev[3], C = +prev[4];
-  return (H+L+C)/3;
-}
-
-function ema(values, period){const k=2/(period+1);let prev=values[0];const out=[prev];for(let i=1;i<values.length;i++){const v=values[i]*k+prev*(1-k);out.push(v);prev=v;}return out;}
-function rsi(values, period=14){if(values.length<period+1)return[];let gains=0,losses=0;for(let i=1;i<=period;i++){const diff=values[i]-values[i-1];if(diff>=0)gains+=diff;else losses-=diff;}let avgGain=gains/period,avgLoss=losses/period;const out=new Array(period).fill(null);for(let i=period+1;i<values.length;i++){const diff=values[i]-values[i-1];const gain=diff>0?diff:0;const loss=diff<0?-diff:0;avgGain=(avgGain*(period-1)+gain)/period;avgLoss=(avgLoss*(period-1)+loss)/period;const rs=avgLoss===0?1000:avgGain/avgLoss;out.push(100-(100/(1+rs)));}return out;}
-function macd(values, fast=12, slow=26, signalPeriod=9){const ef=ema(values,fast),es=ema(values,slow);const macdLine=ef.map((v,i)=>(es[i]==null?null:(v-es[i])));const start=slow;const macdValid=macdLine.slice(start).filter(v=>v!=null);const signalPart=ema(macdValid,signalPeriod);const signalLine=new Array(start).fill(null).concat(signalPart);return{macdLine,signalLine};}
-function atr(highs,lows,closes,period=14){const trs=[];for(let i=0;i<highs.length;i++){if(i===0){trs.push(highs[i]-lows[i]);continue;}const hl=highs[i]-lows[i];const hc=Math.abs(highs[i]-closes[i-1]);const lc=Math.abs(lows[i]-closes[i-1]);trs.push(Math.max(hl,hc,lc));}if(trs.length<period)return[];let rma=trs.slice(0,period).reduce((a,b)=>a+b,0)/period;const out=new Array(period-1).fill(null);out.push(rma);for(let i=period;i<trs.length;i++){rma=(rma*(period-1)+trs[i])/period;out.push(rma);}return out;}
+async function fetchKlines(symbol, interval="15m", limit=300){const url = PROXY(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);const res = await fetch(url);if(!res.ok) throw new Error(`HTTP ${res.status}`);const data = await res.json();if(!Array.isArray(data)) throw new Error("Bad payload");return data;}
+async function fetchDailyPivot(symbol){const url = PROXY(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1d&limit=3`);const res = await fetch(url);if(!res.ok) return null;const data = await res.json();if(!Array.isArray(data) || data.length < 2) return null;const prev = data[data.length-2];const H = +prev[2], L = +prev[3], C = +prev[4];return (H+L+C)/3;}
 
 async function buildTable(){
-  const tbody=document.querySelector("#crypto-table tbody");
-  tbody.innerHTML="";
-  const interval=document.getElementById("interval").value;
-
+  const tbody = document.querySelector("#crypto-table tbody");
+  tbody.innerHTML = "";
+  const interval = document.getElementById("interval").value;
   for(const symbol of SYMBOLS){
     try{
-      const [kl,pp]=await Promise.all([fetchKlines(symbol,interval,300),fetchDailyPivot(symbol)]);
-      const closes=kl.map(k=>+k[4]),highs=kl.map(k=>+k[2]),lows=kl.map(k=>+k[3]);
-      const last=closes.at(-1);
-      const ema9=ema(closes,9).at(-1), ema20=ema(closes,20).at(-1), ema50=ema(closes,50).at(-1), ema100=ema(closes,100).at(-1), ema200=ema(closes,200).at(-1);
-      const rsiv=rsi(closes,14).at(-1);
-      const {macdLine,signalLine}=macd(closes,12,26,9);
-      const macdv=macdLine.at(-1),sigv=signalLine.at(-1);
-      const atrv=atr(highs,lows,closes,14).at(-1);
+      const [kl, pp] = await Promise.all([fetchKlines(symbol, interval, 300), fetchDailyPivot(symbol)]);
+      const closes = kl.map(k=>+k[4]);
+      const highs  = kl.map(k=>+k[2]);
+      const lows   = kl.map(k=>+k[3]);
+      const last   = closes.at(-1);
 
-      const longCond=last>ema20&&macdv>sigv&&rsiv>50;
-      const shortCond=last<ema20&&macdv<sigv&&rsiv<50;
-      const L=longCond?"L":"";const S=shortCond?"S":"";
+      const ema9Arr=ema(closes,9), ema20Arr=ema(closes,20), ema50Arr=ema(closes,50), ema100Arr=ema(closes,100), ema200Arr=ema(closes,200);
+      const rsiArr=rsi(closes,14); const {macdLine, signalLine}=macd(closes,12,26,9);
+      const ema9v=ema9Arr.at(-1), ema20v=ema20Arr.at(-1), ema50v=ema50Arr.at(-1), ema100v=ema100Arr.at(-1), ema200v=ema200Arr.at(-1);
+      const rsiv=rsiArr.at(-1), macdv=macdLine.at(-1), sigv=signalLine.at(-1);
 
-      let entry="-",exitPlan="-";
-      if(longCond&&atrv){entry=last.toFixed(4);exitPlan=`TP:${(last+1.5*atrv).toFixed(4)} | SL:${(last-1.0*atrv).toFixed(4)}`;}
-      else if(shortCond&&atrv){entry=last.toFixed(4);exitPlan=`TP:${(last-1.5*atrv).toFixed(4)} | SL:${(last+1.0*atrv).toFixed(4)}`;}
-
-      const last20=closes.slice(-20),support=Math.min(...last20),resistance=Math.max(...last20);
-      const onSupport=withinPct(last,support,0.3)?"✅":"—";
-      const onResistance=withinPct(last,resistance,0.3)?"✅":"—";
-      const breakout=last>resistance*1.002?"✅":"—";
-      const bounce=withinPct(last,support,0.3)&&rsiv>rsi(closes,14).slice(-2)[0]?"✅":"—";
-      const golden=ema50&&ema200&&ema(closes,50).at(-2)<ema(closes,200).at(-2)&&ema50>ema200?"✅":"—";
-      const rally=(last>ema9&&last>ema20&&rsiv>70&&macdv>sigv)?"✅":"—";
+      const longCond= last>ema20v && macdv>sigv && rsiv>50;
+      const shortCond= last<ema20v && macdv<sigv && rsiv<50;
 
       const macdClass=(macdv-sigv)>=0?"positive":"negative";
-      const rsiClass=rsiv>=70?"rsi-high":(rsiv<=30?"rsi-low":"");
-      const longBadge=longCond?'<span class="badge good">✅</span>':'<span class="badge neutral">—</span>';
-      const shortBadge=shortCond?'<span class="badge bad">⚠</span>':'<span class="badge neutral">—</span>';
+      const rsiClass= rsiv>=70?"rsi-high": rsiv<=30?"rsi-low":"";
 
       const tr=document.createElement("tr");
       tr.innerHTML=`
-        <td class="nowrap sticky">${symbol}</td>
-        <td class="sticky">${fmt(last,4)}</td>
-        <td class="${rsiClass} sticky">${fmt(rsiv,2)}</td>
-        <td class="sticky">${fmt(ema9,4)}</td>
-        <td class="sticky">${fmt(ema20,4)}</td>
-        <td>${fmt(ema50,4)}</td>
-        <td>${fmt(ema100,4)}</td>
+        <td class="nowrap">${symbol}</td>
+        <td>${fmt(last,4)}</td>
+        <td class="${rsiClass}">${fmt(rsiv,2)}</td>
+        <td>${fmt(ema9v,4)}</td>
+        <td>${fmt(ema20v,4)}</td>
+        <td>${fmt(ema50v,4)}</td>
+        <td>${fmt(ema100v,4)}</td>
         <td class="${macdClass}">${fmt(macdv,6)}</td>
         <td class="${macdClass}">${fmt(sigv,6)}</td>
-        <td>${L}</td>
-        <td>${S}</td>
-        <td>${fmt(pp,2)}</td>
-        <td>${longBadge}</td>
-        <td>${shortBadge}</td>
-        <td>${entry}</td>
-        <td>${exitPlan}</td>
-        <td>${fmt(support,4)}</td>
-        <td>${fmt(resistance,4)}</td>
-        <td>${onSupport}</td>
-        <td>${onResistance}</td>
-        <td>${breakout}</td>
-        <td>${bounce}</td>
-        <td>${golden}</td>
-        <td>${rally}</td>
+        <td>${longCond?"L":""}</td>
+        <td>${shortCond?"S":""}</td>
+        <td>${pp?fmt(pp,2):"-"}</td>
+        <td>${longCond?'<span class="badge good">✅</span>':'<span class="badge neutral">—</span>'}</td>
+        <td>${shortCond?'<span class="badge bad">⚠</span>':'<span class="badge neutral">—</span>'}</td>
+        <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
       `;
       tbody.appendChild(tr);
     }catch(err){
@@ -203,9 +162,11 @@ async function buildTable(){
   }
   document.getElementById("lastUpdate").textContent="آخرین بروزرسانی: "+new Date().toLocaleString();
 }
+
 document.getElementById("refreshBtn").addEventListener("click", buildTable);
 buildTable();
-setInterval(buildTable,60000);
+setInterval(buildTable, 60000);
 </script>
 </body>
 </html>
+
